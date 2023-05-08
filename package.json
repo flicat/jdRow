@@ -1,13 +1,15 @@
 {
   "name": "jdRow",
   "version": "1.0.0",
-  "description": "a mobile component library for Vue.js.",
+  "description": "a grid layout component for Vue.js.",
   "keywords": [
     "vue",
     "vue3",
     "components",
     "frontend",
-    "ui"
+    "ui",
+    "grid",
+    "flex"
   ],
   "author": {
     "name": "flicat",
@@ -23,12 +25,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:flicat/pl-mobile2.git"
+    "url": "git@github.com:flicat/jdRow.git"
   },
-  "homepage": "https://flicat.github.io/pl-mobile2/",
+  "homepage": "https://flicat.github.io/jdRow/",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/flicat/pl-mobile2/issues"
+    "url": "https://github.com/flicat/jdRow/issues"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^2.3.3",

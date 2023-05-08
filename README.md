@@ -49,4 +49,4 @@ app.use(JdRow).mount("#app");
 | resize    | 是否可改变尺寸 | Boolean |      —     |   false |
 
 #### Demo
-[Demo](https://flicat.github.io/JdRow/)
+[Demo](https://flicat.github.io/jdRow/)
