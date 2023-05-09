@@ -4,12 +4,12 @@
 
 ### 安装
 ```bash
-npm i jdRow --save
+npm i jd-row --save
 ```
 
 ### 使用
 ```javascript
-import JdRow from "jdRow";
+import JdRow from "jd-row";
 
 const app = createApp(App);
 app.use(JdRow).mount("#app");
