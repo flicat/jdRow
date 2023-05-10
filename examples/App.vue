@@ -1,7 +1,7 @@
 <template>
   <p>
-    <button @click="canResize = !canResize">{{canResize ? 'close' : 'open'}} resize</button>&emsp;
-    <button @click="canDrag = !canDrag">{{canDrag ? 'close' : 'open'}} drag</button>
+    <button @click="canResize = !canResize">{{canResize ? 'disable' : 'enable'}} resize</button>&emsp;
+    <button @click="canDrag = !canDrag">{{canDrag ? 'disable' : 'enable'}} drag</button>
   </p>
   <jd-row class="home-wrap" :rowSize="9" :rowHeight="50" :rowGap="16" :columnGap="16">
     <jd-col :rowSpan="5" :columnSpan="5" :drag="canDrag" :resize="canResize">1</jd-col>
@@ -38,5 +38,6 @@ body,
 }
 #app {
   padding: 16px;
+  overflow: auto;
 }
 </style>

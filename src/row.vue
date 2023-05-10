@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { defineProps, onMounted, onUnmounted, provide, reactive, ref } from 'vue'
+import { computed, defineProps, onMounted, onUnmounted, provide, reactive, ref } from 'vue'
 
 const props = defineProps({
   // 单列宽
@@ -29,9 +29,52 @@ const props = defineProps({
   }
 })
 
-const rows = ref(null)
-const rowWidth = ref(0)
-const rowHeight = ref(0)
+const rows = ref(null)      // 容器
+const innerWidth = ref(0)   // 容器宽度
+const innerHeight = ref(0)   // 容器高度
+
+// 计算容器高度
+const computedRowsSize = ({ width, height }, target) => {
+  const {
+    'padding-left': paddingLeft,
+    'padding-right': paddingRight,
+    'border-left-width': borderLeft,
+    'border-right-width': borderRight,
+    'padding-top': paddingTop,
+    'padding-bottom': paddingBottom,
+    'border-top-width': borderTop,
+    'border-bottom-width': borderBottom
+  } = window.getComputedStyle(target)
+  innerWidth.value = width - parseInt(paddingLeft) - parseInt(paddingRight) - parseInt(borderLeft) - parseInt(borderRight)
+  innerHeight.value = height - parseInt(paddingTop) - parseInt(paddingBottom) - parseInt(borderTop) - parseInt(borderBottom)
+}
+
+// 监听容器resize
+const rowsObserver = new ResizeObserver(entries => {
+  window.requestAnimationFrame(() => {
+    entries.forEach(({ contentRect, target }) => {
+      computedRowsSize(contentRect, target)
+    })
+  })
+})
+
+// 单列宽
+const rowWidth = computed(() => {
+  if (typeof props.rowWidth === 'number') {
+    return props.rowWidth
+  } else {
+    return (innerWidth.value - (props.rowSize - 1) * props.columnGap) / props.rowSize
+  }
+})
+
+// 单列高
+const rowHeight = computed(() => {
+  if (typeof props.rowHeight === 'number') {
+    return props.rowHeight
+  } else {
+    return innerHeight.value
+  }
+})
 
 let resizeTimer
 // resize拖放结束后计算宽高
@@ -43,8 +86,8 @@ const setSizeHandler = (target, gridColumn, gridRow) => {
   }, 300)
 }
 
-// 监听resize
-const resizeObserver = new ResizeObserver(entries => {
+// 监听子节点resize
+const childrenObserver = new ResizeObserver(entries => {
   window.requestAnimationFrame(() => {
     entries.forEach(({ contentRect, target }) => {
       let gridColumn = Math.ceil(contentRect.width / (rowWidth.value + props.columnGap))
@@ -63,7 +106,7 @@ const rowsChildren = reactive([])
 // 注册子组件
 const registerChild = (col, index) => {
   rowsChildren[index] = col
-  resizeObserver.observe(col, { box: 'border-box' })
+  childrenObserver.observe(col, { box: 'border-box' })
 }
 // 子组件获取排序
 const getOrder = col => {
@@ -95,22 +138,13 @@ provide('setDragNode', setDragNode)
 provide('setDropNode', setDropNode)
 
 onMounted(() => {
-  // 如果没有传入单个网格宽高则自动计算
-  const { width, height } = rows.value.getBoundingClientRect()
-  if (typeof props.rowWidth === 'number') {
-    rowWidth.value = props.rowWidth
-  } else {
-    rowWidth.value = (width - (props.rowSize - 1) * props.columnGap) / props.rowSize
-  }
-  if (typeof props.rowHeight === 'number') {
-    rowHeight.value = props.rowHeight
-  } else {
-    rowHeight.value = height
-  }
+  rowsObserver.observe(rows.value)
+  computedRowsSize(rows.value.getBoundingClientRect(), rows.value)
 })
 
 onUnmounted(() => {
-  resizeObserver.disconnect()
+  childrenObserver.disconnect()
+  rowsObserver.disconnect()
 })
 </script>
 
