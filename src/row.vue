@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, onMounted, onUnmounted, provide, reactive, ref } from 'vue'
+import { computed, defineProps, nextTick, onMounted, onUnmounted, provide, reactive, ref } from 'vue'
 
 const props = defineProps({
   // 单列宽
@@ -33,8 +33,12 @@ const rows = ref(null)      // 容器
 const innerWidth = ref(0)   // 容器宽度
 const innerHeight = ref(0)   // 容器高度
 
-// 计算容器高度
-const computedRowsSize = ({ width, height }, target) => {
+// 子组件
+const rowsChildren = reactive([])
+
+// 计算容器尺寸
+const computedRowsSize = () => {
+  const { width, height } = rows.value.getBoundingClientRect()
   const {
     'padding-left': paddingLeft,
     'padding-right': paddingRight,
@@ -44,18 +48,15 @@ const computedRowsSize = ({ width, height }, target) => {
     'padding-bottom': paddingBottom,
     'border-top-width': borderTop,
     'border-bottom-width': borderBottom
-  } = window.getComputedStyle(target)
+  } = window.getComputedStyle(rows.value)
+
   innerWidth.value = width - parseInt(paddingLeft) - parseInt(paddingRight) - parseInt(borderLeft) - parseInt(borderRight)
   innerHeight.value = height - parseInt(paddingTop) - parseInt(paddingBottom) - parseInt(borderTop) - parseInt(borderBottom)
 }
 
 // 监听容器resize
-const rowsObserver = new ResizeObserver(entries => {
-  window.requestAnimationFrame(() => {
-    entries.forEach(({ contentRect, target }) => {
-      computedRowsSize(contentRect, target)
-    })
-  })
+const rowsObserver = new ResizeObserver(() => {
+  window.requestAnimationFrame(computedRowsSize)
 })
 
 // 单列宽
@@ -76,14 +77,13 @@ const rowHeight = computed(() => {
   }
 })
 
-let resizeTimer
 // resize拖放结束后计算宽高
 const setSizeHandler = (target, gridColumn, gridRow) => {
-  clearTimeout(resizeTimer)
-  resizeTimer = setTimeout(() => {
-    target.style.width = `${gridColumn * rowWidth.value + (gridColumn - 1) * props.columnGap}px`
-    target.style.height = `${gridRow * rowHeight.value + (gridRow - 1) * props.rowGap}px`
-  }, 300)
+  const col = rowsChildren.find(item => item.el === target)
+  if (col) {
+    col.gridColumn = gridColumn
+    col.gridRow = gridRow
+  }
 }
 
 // 监听子节点resize
@@ -95,18 +95,28 @@ const childrenObserver = new ResizeObserver(entries => {
       if (gridColumn > props.rowSize) {
         gridColumn = props.rowSize
       }
-      target.style.gridColumn = `span ${gridColumn}`
-      target.style.gridRow = `span ${gridRow}`
       setSizeHandler(target, gridColumn, gridRow)
     })
   })
 })
 
-const rowsChildren = reactive([])
+let sizeChangeTimer
+// 监听子节点属性变动
+const childrenAttrObserver = new MutationObserver(mutationList => {
+  clearTimeout(sizeChangeTimer)
+  sizeChangeTimer = setTimeout(() => {
+    mutationList.forEach(({ target }) => {
+      target.style.width = ''
+      target.style.height = ''
+    })
+  }, 300)
+})
+
 // 注册子组件
 const registerChild = (col, index) => {
   rowsChildren[index] = col
-  childrenObserver.observe(col, { box: 'border-box' })
+  childrenObserver.observe(col.el, { box: 'border-box' })
+  childrenAttrObserver.observe(col.el, { attributeFilter: ['style'] })
 }
 // 子组件获取排序
 const getOrder = col => {
@@ -138,12 +148,15 @@ provide('setDragNode', setDragNode)
 provide('setDropNode', setDropNode)
 
 onMounted(() => {
-  rowsObserver.observe(rows.value)
-  computedRowsSize(rows.value.getBoundingClientRect(), rows.value)
+  nextTick(() => {
+    computedRowsSize()
+    rowsObserver.observe(rows.value)
+  })
 })
 
 onUnmounted(() => {
   childrenObserver.disconnect()
+  childrenAttrObserver.disconnect()
   rowsObserver.disconnect()
 })
 </script>

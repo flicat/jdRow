@@ -24,6 +24,10 @@ const canDrag = ref(true)
 <style lang="less" scoped>
 .home-wrap {
   width: 100%;
+  background-color: #fff;
+  padding: 16px;
+  box-sizing: border-box;
+  border: 10px solid #ccc;
 }
 </style>
 

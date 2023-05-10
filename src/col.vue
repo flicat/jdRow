@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { defineProps, computed, inject, onMounted, ref } from 'vue'
+import { defineProps, computed, inject, onMounted, ref, reactive } from 'vue'
 
 const props = defineProps({
   // 跨行
@@ -32,22 +32,32 @@ const setOrder = inject('setOrder', () => { })
 const setDragNode = inject('setDragNode', () => { })
 const setDropNode = inject('setDropNode', () => { })
 
-const itemOrder = computed(() => {
-  const order = getOrder(colItem.value)
-  return order
+const isOnDrag = ref(false)     // 是否在拖动
+
+// 传递给父组件的对象
+const target = reactive({
+  el: null,
+  gridColumn: props.columnSpan,
+  gridRow: props.rowSpan
 })
 
-const isOnDrag = ref(false)
+const itemOrder = computed(() => getOrder(target))    // 排序
+
+const styleGridColumn = computed(() => `span ${target.gridColumn}`) // 跨列
+const styleGridRow = computed(() => `span ${target.gridRow}`) // 跨行
 
 onMounted(() => {
+  // 获取当前顺序
   const index = Array.from(colItem.value.parentNode.children).indexOf(colItem.value)
-  registerHandler(colItem.value, index)
+  target.el = colItem.value
+  registerHandler(target, index)
 
+  // 拖放事件
   colItem.value.addEventListener('dragstart', () => {
     if (!props.drag) {
       return false
     }
-    setDragNode(colItem.value)
+    setDragNode(target)
     isOnDrag.value = true
   })
   colItem.value.addEventListener('dragend', () => {
@@ -66,7 +76,7 @@ onMounted(() => {
     if (!props.drag) {
       return false
     }
-    setDropNode(colItem.value)
+    setDropNode(target)
   })
 })
 </script>
@@ -81,8 +91,8 @@ onMounted(() => {
   font-weight: 900;
   color: #666;
   text-align: center;
-  grid-column: span v-bind(columnSpan);
-  grid-row: span v-bind(rowSpan);
+  grid-column: v-bind(styleGridColumn);
+  grid-row: v-bind(styleGridRow);
   order: v-bind(itemOrder);
   resize: none !important;
 }
