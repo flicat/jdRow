@@ -3,7 +3,7 @@
     <button @click="canResize = !canResize">{{canResize ? 'disable' : 'enable'}} resize</button>&emsp;
     <button @click="canDrag = !canDrag">{{canDrag ? 'disable' : 'enable'}} drag</button>
   </p>
-  <jd-row class="home-wrap" :rowSize="9" :rowHeight="50" :rowGap="16" :columnGap="16">
+  <jd-row class="home-wrap" :rowSize="9" :columns="['100px', '200px', '300px', '400px',]" :rows="['80px', '40px','80px', '40px']" :rowHeight="50" :rowGap="8" :columnGap="16">
     <jd-col :rowSpan="5" :columnSpan="5" :drag="canDrag" :resize="canResize">1</jd-col>
     <jd-col :rowSpan="5" :columnSpan="4" :drag="canDrag" :resize="canResize">2</jd-col>
     <jd-col :rowSpan="3" :columnSpan="3" :drag="canDrag" :resize="canResize">3</jd-col>

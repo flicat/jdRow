@@ -38,7 +38,9 @@ const isOnDrag = ref(false)     // 是否在拖动
 const target = reactive({
   el: null,
   gridColumn: props.columnSpan,
-  gridRow: props.rowSpan
+  gridRow: props.rowSpan,
+  drag: props.drag,
+  resize: props.resize
 })
 
 const itemOrder = computed(() => getOrder(target))    // 排序
@@ -95,14 +97,15 @@ onMounted(() => {
   grid-row: v-bind(styleGridRow);
   order: v-bind(itemOrder);
   resize: none !important;
-}
-.on-drag {
-  opacity: 0.2;
-}
-.can-edit {
-  resize: both !important;
-}
-.can-drag {
-  cursor: move;
+  position: relative;
+  &.on-drag {
+    opacity: 0.2;
+  }
+  &.can-edit {
+    resize: both !important;
+  }
+  &.can-drag {
+    cursor: move;
+  }
 }
 </style>
