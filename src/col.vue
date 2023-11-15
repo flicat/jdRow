@@ -1,11 +1,11 @@
 <template>
-  <div class="col-item" :class="{'on-drag' : isOnDrag, 'can-edit': resize, 'can-drag': drag}" :draggable="drag" ref="colItem">
+  <div class="col-item" :class="{'on-drag': isOnDrag, 'can-edit': resize, 'can-drag': drag}" :draggable="drag" ref="colItem">
     <slot></slot>
   </div>
 </template>
 
 <script setup>
-import { defineProps, computed, inject, onMounted, ref, reactive } from 'vue'
+import {defineEmits, defineProps, computed, inject, onMounted, ref, reactive, watch} from 'vue'
 
 const props = defineProps({
   // 跨行
@@ -23,16 +23,18 @@ const props = defineProps({
   // 是否可改变尺寸
   resize: Boolean
 })
+const emit = defineEmits(['change'])
 
 const colItem = ref(null)
 
-const registerHandler = inject('register', () => { })
-const getOrder = inject('getOrder', () => { })
-const setOrder = inject('setOrder', () => { })
-const setDragNode = inject('setDragNode', () => { })
-const setDropNode = inject('setDropNode', () => { })
+const registerHandler = inject('register', () => {})
+const getOrder = inject('getOrder', () => {})
+const setOrder = inject('setOrder', () => {})
+const setDragNode = inject('setDragNode', () => {})
+const setDropNode = inject('setDropNode', () => {})
+const setResizeNode = inject('setResizeNode', () => {})
 
-const isOnDrag = ref(false)     // 是否在拖动
+const isOnDrag = ref(false) // 是否在拖动
 
 // 传递给父组件的对象
 const target = reactive({
@@ -43,7 +45,7 @@ const target = reactive({
   resize: props.resize
 })
 
-const itemOrder = computed(() => getOrder(target))    // 排序
+const itemOrder = computed(() => getOrder(target)) // 排序
 
 const styleGridColumn = computed(() => `span ${target.gridColumn}`) // 跨列
 const styleGridRow = computed(() => `span ${target.gridRow}`) // 跨行
@@ -79,6 +81,37 @@ onMounted(() => {
       return false
     }
     setDropNode(target)
+  })
+  colItem.value.addEventListener('mousedown', () => {
+    if (!props.resize) {
+      return false
+    }
+    setResizeNode(target)
+  })
+
+  // 提交排序和尺寸
+  watch(itemOrder, val => {
+    emit('change', {
+      order: val,
+      column: styleGridColumn.value,
+      row: styleGridRow.value
+    })
+  })
+
+  watch(styleGridColumn, val => {
+    emit('change', {
+      order: itemOrder.value,
+      column: val,
+      row: styleGridRow.value
+    })
+  })
+
+  watch(styleGridRow, val => {
+    emit('change', {
+      order: itemOrder.value,
+      column: styleGridColumn.value,
+      row: val
+    })
   })
 })
 </script>

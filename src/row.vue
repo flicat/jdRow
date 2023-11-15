@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, nextTick, onMounted, onUnmounted, provide, reactive, ref } from 'vue'
+import {computed, defineProps, nextTick, onMounted, onUnmounted, provide, reactive, ref} from 'vue'
 
 const props = defineProps({
   // 单列宽
@@ -33,18 +33,22 @@ const props = defineProps({
   rows: Array
 })
 
-const refRows = ref(null)          // 容器
-const columnsList = reactive([])   // 容器所有列宽数组
-const rowsList = reactive([])      // 容器所有行高数组
+const refRows = ref(null) // 容器
+const columnsList = reactive([]) // 容器所有列宽数组
+const rowsList = reactive([]) // 容器所有行高数组
 
-const rowsWidth = ref(0)           // 容器宽度
-const rowsHeight = ref(0)          // 容器高度
-const rowsLeft = ref(0)            // 容器left
-const rowsTop = ref(0)             // 容器top
+const rowsWidth = ref(0) // 容器宽度
+const rowsHeight = ref(0) // 容器高度
+const rowsLeft = ref(0) // 容器left
+const rowsTop = ref(0) // 容器top
+
+let dragNode // 当前拖放的节点
+let dropNode // 当前拖放的节点
+let resizeNode // 当前缩放的节点
 
 // 计算样式
 const styleTemplateColumns = computed(() => {
-  let columns = Array.from({ length: props.rowSize })
+  let columns = Array.from({length: props.rowSize})
   if (typeof props.rowWidth === 'number') {
     columns.fill(props.rowWidth + 'px')
   } else {
@@ -68,27 +72,22 @@ const rowsChildren = reactive([])
 
 // 计算容器尺寸
 const computedRowsSize = () => {
-  const { width, height, left, top } = refRows.value.getBoundingClientRect()
-  const {
-    'padding-left': paddingLeft,
-    'padding-right': paddingRight,
-    'border-left-width': borderLeft,
-    'border-right-width': borderRight,
-    'padding-top': paddingTop,
-    'padding-bottom': paddingBottom,
-    'border-top-width': borderTop,
-    'border-bottom-width': borderBottom,
-    'grid-template-columns': templateColumns,
-    'grid-template-rows': templateRows
-  } = window.getComputedStyle(refRows.value)
+  const {width, height, left, top} = refRows.value.getBoundingClientRect()
+  const {'padding-left': paddingLeft, 'padding-right': paddingRight, 'border-left-width': borderLeft, 'border-right-width': borderRight, 'padding-top': paddingTop, 'padding-bottom': paddingBottom, 'border-top-width': borderTop, 'border-bottom-width': borderBottom, 'grid-template-columns': templateColumns, 'grid-template-rows': templateRows} = window.getComputedStyle(refRows.value)
 
   rowsWidth.value = width - parseInt(paddingLeft) - parseInt(paddingRight) - parseInt(borderLeft) - parseInt(borderRight)
   rowsHeight.value = height - parseInt(paddingTop) - parseInt(paddingBottom) - parseInt(borderTop) - parseInt(borderBottom)
   rowsLeft.value = left + parseInt(paddingLeft) + parseInt(borderLeft)
   rowsTop.value = top + parseInt(paddingTop) + parseInt(borderTop)
 
-  Object.assign(columnsList, templateColumns.split(' ').map(i => parseFloat(i)))
-  Object.assign(rowsList, templateRows.split(' ').map(i => parseFloat(i)))
+  Object.assign(
+    columnsList,
+    templateColumns.split(' ').map(i => parseFloat(i))
+  )
+  Object.assign(
+    rowsList,
+    templateRows.split(' ').map(i => parseFloat(i))
+  )
 }
 
 // 监听容器resize
@@ -108,8 +107,11 @@ const setSizeHandler = (target, gridColumn, gridRow) => {
 // 监听子节点resize
 const childrenResizeObserver = new ResizeObserver(entries => {
   window.requestAnimationFrame(() => {
-    entries.forEach(({ target }) => {
-      let { left, top, right, bottom } = target.getBoundingClientRect()
+    entries.forEach(({target}) => {
+      if (resizeNode && resizeNode.el !== target) {
+        return false
+      }
+      let {left, top, right, bottom} = target.getBoundingClientRect()
       let calcLeft = left - rowsLeft.value
       let calcTop = top - rowsTop.value
       let calcRight = right - rowsLeft.value
@@ -158,7 +160,7 @@ let sizeChangeTimer
 const childrenAttrObserver = new MutationObserver(mutationList => {
   clearTimeout(sizeChangeTimer)
   sizeChangeTimer = setTimeout(() => {
-    mutationList.forEach(({ target }) => {
+    mutationList.forEach(({target}) => {
       target.style.width = ''
       target.style.height = ''
     })
@@ -169,8 +171,8 @@ const childrenAttrObserver = new MutationObserver(mutationList => {
 const registerChild = (col, index) => {
   rowsChildren[index] = col
   if (col.resize) {
-    childrenResizeObserver.observe(col.el, { box: 'border-box' })
-    childrenAttrObserver.observe(col.el, { attributeFilter: ['style'] })
+    childrenResizeObserver.observe(col.el, {box: 'border-box'})
+    childrenAttrObserver.observe(col.el, {attributeFilter: ['style']})
   }
 }
 // 子组件获取排序
@@ -178,8 +180,6 @@ const getOrder = col => {
   return rowsChildren.indexOf(col)
 }
 
-let dragNode
-let dropNode
 // 子组件设置排序
 const setOrder = () => {
   const from = rowsChildren.indexOf(dragNode)
@@ -195,12 +195,16 @@ const setDragNode = col => {
 const setDropNode = col => {
   dropNode = col
 }
+const setResizeNode = col => {
+  resizeNode = col
+}
 
 provide('register', registerChild)
 provide('getOrder', getOrder)
 provide('setOrder', setOrder)
 provide('setDragNode', setDragNode)
 provide('setDropNode', setDropNode)
+provide('setResizeNode', setResizeNode)
 
 onMounted(() => {
   nextTick(() => {
